@@ -25,7 +25,7 @@ def chi_square_test(observed, expected):
 
 def populate_points():
     """A function that generates a data structure containing the points from
-    the work that Kristian did
+    the data pulled using the AI tool Docusage.  @Kristian did
     
     Args:
         None
