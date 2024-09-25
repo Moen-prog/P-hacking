@@ -1,31 +1,12 @@
 import numpy as np
+from scipy.stats import chisquare, beta, expon
 import matplotlib.pyplot as plt
-from scipy.stats import beta
 import pandas as pd
-from scipy.stats import expon
-
-
-def chi_square_test(observed, expected):
-    """A function that calculates the Chi square value given the observed and expected values
-    
-    Args:
-        observed: A list of observed values
-        expected: A list of expected values
-        
-    Returns:
-        chi_square: A float representing the Chi square value"""
-    chi_square = 0
-    for o, e in zip(observed, expected):
-        if e != 0:
-            chi_square += (o - e) ** 2 / e
-        else:
-            chi_square += o ** 2
-    return chi_square
 
 
 def populate_points():
     """A function that generates a data structure containing the points from
-    the data pulled using the AI tool Docusage.  @Kristian did
+    the work that Kristian did
     
     Args:
         None
@@ -65,85 +46,51 @@ def main():
     ### Part 1: Find the theoretical / expected values based on beta distribution. 
     # Define the parameters for the Beta distribution
     alpha = 1  # Shape parameter alpha
-    beta_param = 17  # Shape parameter beta
+    beta_param = 40  # Shape parameter beta
 
-    # Define the range
-    start = 0
-    end = 1
+    observed = populate_points()
 
-    # Define the number of equal parts
-    num_parts = 100
+    # Generate the expected frequencies using a Beta distribution
+    np.random.seed(42)  # Seed the random number generator for reproducibility
+    expected = beta.rvs(alpha, beta_param, size=len(observed))  # Random sample from beta distribution
+    expected = expected / np.sum(expected) * np.sum(observed)  # Scale expected to match the total count of observed
+    
 
-    # Generate the points
-    # points = np.linspace(start, end, num_parts + 1)
-    points = np.linspace(start, end, num_parts + 1)
+    # Plotting the Beta distribution
+    x = np.linspace(0, 1, 100)  # x values for the plot
+    y = beta.pdf(x, alpha, beta_param)  # Beta PDF values
+    expected = expected * (1 / 100) * 100  # Assuming total counts = 100
 
-    # Generate the Beta distribution within the scaled range
-    scaled_points = points / end
-    beta_values = beta.pdf(scaled_points, alpha, beta_param)
-
-    # Scale the beta values to match the original range
-    beta_values = beta_values / np.sum(beta_values) * num_parts / (end - start)
-
-    # Plot the Beta distribution
-    plt.plot(points, beta_values, label=f'Beta({alpha}, {beta_param})')
+    plt.figure(figsize=(10, 6))
+    plt.plot(x, y, label=f'Beta Distribution (a={alpha}, b={beta_param})', color='blue')
+    plt.title('Beta Distribution')
     plt.xlabel('x')
     plt.ylabel('Probability Density')
-    plt.title('Beta Distribution')
+    plt.axhline(0, color='black', linewidth=0.5, ls='--')
+    plt.axvline(0, color='black', linewidth=0.5, ls='--')
     plt.legend()
-    plt.grid(True)
+    plt.grid()
     plt.show()
 
-
-    ### Part 2: Take the observed values and put them into generated "boxes" for the range [0, 1] with 100 equal parts
-    # Define the range
-    start = 0
-    end = 1
-
-    # Define the number of equal parts
-    num_parts = 100
-
-    # Generate the "boxes"
-    Box_range = np.linspace(start, end, num_parts + 1)
-
-    # Print the points
-    for boxes in Box_range:
-        print(boxes)
-
-    observed_values = populate_points()
-    expected_values = beta_values
-
     # Perform the Chi square test:
-    chi_square = chi_square_test(observed_values, expected_values)
+    chi2_stat, p_value = chisquare(f_obs=observed, f_exp=expected)
 
-    print(f'Chi square value: {chi_square}')
+    # Calculate degrees of freedom
+    n_bins = 100
+    degrees_of_freedom = n_bins - 1 
+
+    # Print the results
+    print(f"Chi-square statistic: {chi2_stat}")
+    print(f"P-value: {p_value}")
+    print(f"Degrees of Freedom: {degrees_of_freedom}")
+
+
+    #chi2_stat, p_value = chi_square_test(observed, expected)
+    print(f"Chi-Square Statistic: {chi2_stat}, P-value: {p_value}")
+
+    return chi2_stat, p_value, degrees_of_freedom
 
 
 if __name__ == "__main__":
     # Main function only called when this program is ran directly
     main()
-
-
-## Exponential graph (With some help from ChatGPT)
-
-# Get your data here
-# observed_values_2 = np.array([populate_points()])
-
-# # Fit the exponential distribution to your observed data
-# loc, fitted_scale = expon.fit(observed_values_2)
-
-# # Plot the original data and fitted distribution
-# plt.figure(figsize=(8,6))
-# plt.hist(observed_values_2, bins=50, density=True, alpha=0.1, label='Observed Data')
-
-# # Plot the fitted exponential distribution (PDF)
-# x = np.linspace(0, np.max(observed_values_2), 1000)
-# pdf_fitted = expon.pdf(x, loc=loc, scale=fitted_scale)
-# plt.plot(x, pdf_fitted, 'r-', lw=2, label='Fitted Exponential Distribution')
-
-# plt.xlabel('Value')
-# plt.ylabel('Density')
-# plt.title('Observed Data vs Fitted Exponential Distribution')
-# plt.legend()
-
-# plt.show()
